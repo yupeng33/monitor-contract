@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.monitor.contract.dao.mapper.MonitorMapper">
+
+    <select id="selectUnEndMonitor" resultType="com.monitor.contract.model.entity.Monitor">
+        select * from monitor where status != 2
+    </select>
+
+    <update id="updateStatusById">
+        update monitor set status = #{status} where id = #{id}
+    </update>
+
+    <update id="unFrozenMonitor">
+        update monitor set status = 0 where id = #{id} and status = 1
+    </update>
+
+    <update id="updateLastByAddr">
+        update monitor set last_block_number = #{blockNumber} where addr = #{contractAddress} and status != 2
+    </update>
+
+    <update id="updateEndByAddr">
+        update monitor set last_block_number = #{blockNumber}, end_block_number = #{blockNumber}, end_tx_hash = #{txHash}, status = 2 where addr = #{contractAddress}
+    </update>
+
+</mapper>
