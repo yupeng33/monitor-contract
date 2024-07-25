@@ -24,44 +24,26 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false&allowMultiQueries=true&allowPublicKeyRetrieval=true&connectTimeout=15000&socketTimeout=30000&failOverReadOnly=false
     username: root
-    password: 12345678
-    driver-class-name: com.mysql.jdbc.Driver
-    druid:
-      keep-alive: true
-      initial-size: 3
-      min-idle: 3
-      max-active: 10
-      max-wait: 60000
-      filter:
-        stat:
-          log-slow-sql: true
-          slow-sql-millis: 5000
-        wall.config:
-          multi-statement-allow: true
-          none-base-statement-allow: true
-      filters: stat
-      stat-view-servlet:
-        enabled: true
-        reset-enable: true
-        login-username: admin
-        login-password: admin
-      web-stat-filter:
-        enabled: true
-        profile-enable: true
+    password: 1234567890
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      isAutoCommit: false
+      connectionTimeout: 10000
+      maxPoolSize: 2
+      minIdle: 1
+      dataSourceProperties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
   redis:
-    cluster:
-      nodes:
-        - localhost:6399
     database: 0
-    password: t7cCSe_V3x65tbSR
-    pool:
-      maxTotal: 10
-      maxWaitMillis: 2000
-      minIdle: 2
+    host: localhost
     port: 6379
-    timeout: 30000ms
+
 
 mybatis-plus:
   mapper-locations: classpath:mappers/*Mapper.xml  # mapper映射文件
