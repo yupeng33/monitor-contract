@@ -16,5 +16,5 @@ import java.util.concurrent.TimeUnit;
 @Data
 @ConfigurationProperties(prefix = "web3j")
 public class Web3jConfig {
-    public Map<String, String> chains;
+    public Map<Integer, String> chains;
 }

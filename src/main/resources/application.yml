@@ -1,11 +1,8 @@
 web3j:
   chains:
-    HECO: http://node.wallet-dp.huobiapps.com/heco-rpc
-    ETH: http://54.64.51.164:8545
-    BSC: https://data-seed-prebsc-1-s1.binance.org:8545/
-    OEC: http://node.wallet-dp.huobiapps.com/oec-rpc
-    POLYGON: https://rpc-mainnet.matic.network
-    AVAX: https://api.avax.network/ext/bc/C/rpc
+    1: https://eth.llamarpc.com
+    56: https://bsc-dataseed1.defibit.io
+    42161: https://arbitrum.llamarpc.com
 
 server:
   port: 8081

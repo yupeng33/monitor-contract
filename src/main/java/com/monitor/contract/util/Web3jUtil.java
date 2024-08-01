@@ -15,24 +15,18 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class Web3jUtil {
 
-    public static Map<String, Web3j> chainMap = new HashMap<>();
+    public static Map<Integer, Web3j> chainMap = new HashMap<>();
 
-    public static void addWeb3j(String chain, String url) {
+    public static void addWeb3j(Integer chainId, String url) {
         HttpService httpClient = new HttpService(url, okHttpClient, false);
-        chainMap.put(chain.toUpperCase(), Web3j.build(httpClient));
+        chainMap.put(chainId, Web3j.build(httpClient));
     }
 
-    public static Web3j getWeb3j(String chain) {
-        return chainMap.get(chain.toUpperCase(Locale.ROOT));
+    public static Web3j getWeb3j(Integer chainId) {
+        return chainMap.get(chainId);
     }
 
-    public static void getAllWeb3j() {
-        chainMap.entrySet().stream().forEach(e -> {
-            log.info("chian = {}, web3j = {}", e.getKey(), e.getValue());
-        });
-    }
-
-    private static OkHttpClient.Builder builder = new OkHttpClient.Builder()
+    private static final OkHttpClient.Builder builder = new OkHttpClient.Builder()
             .retryOnConnectionFailure(true)
             //连接超时
             .connectTimeout(60, TimeUnit.SECONDS)
@@ -41,6 +35,6 @@ public class Web3jUtil {
             //写超时
             .writeTimeout(60, TimeUnit.SECONDS);
 
-    private static OkHttpClient okHttpClient = new OkHttpClient(builder);
+    private static final OkHttpClient okHttpClient = new OkHttpClient(builder);
 
 }

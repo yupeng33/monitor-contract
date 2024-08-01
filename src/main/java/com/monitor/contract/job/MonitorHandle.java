@@ -1,13 +1,14 @@
 package com.monitor.contract.job;
 
-import com.monitor.contract.dao.mapper.MonitorMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.monitor.contract.mapper.MonitorMapper;
 import com.monitor.contract.model.entity.Monitor;
-import com.monitor.contract.model.enums.ContractTypeEnum;
-import com.monitor.contract.model.enums.MonitorStatusEnum;
+import com.monitor.contract.common.enums.MonitorStatusEnum;
 import com.monitor.contract.service.MonitorService;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,61 +28,51 @@ import java.util.concurrent.TimeUnit;
 public class MonitorHandle {
 
     @Resource
-    private MonitorMapper monitorMapper;
-    @Resource
     private MonitorService monitorService;
     @Resource
-    private RedissonClient redissonClient;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Async
     @Scheduled(cron = "0/10 * * * * ?")
     public void monitor() {
-        List<Monitor> monitorList = monitorMapper.selectUnEndMonitor();
-        monitorList.parallelStream().forEach(e -> {
-            String key = e.getChain().toUpperCase() + e.getAddr();
-            if (!tryFairLock(key)) {
-                log.info("Monitor【{}】 正在执行", key);
+        List<Monitor> monitorList = monitorService.list(new LambdaQueryWrapper<Monitor>().eq(Monitor::getStatus, MonitorStatusEnum.UNMONITOR.getStatus()));
+        monitorList.parallelStream().forEach(monitor -> {
+            String key = monitor.getChainId() + "_" + monitor.getMonitorAddr();
+            if (!lock(key)) {
                 return;
             }
 
             try {
                 log.info("Monitor 【{}】 开始执行", key);
-                monitorMapper.updateStatusById(MonitorStatusEnum.MONITORING.getStatus(), e.getId());
-                monitorService.monitorOfStep(e);
+                monitor.setStatus(MonitorStatusEnum.MONITORING.getStatus());
+                monitorService.updateById(monitor);
+
+                monitorService.monitorOfStep(monitor);
             } catch (Exception ex) {
-                monitorMapper.updateStatusById(MonitorStatusEnum.UNMONITOR.getStatus(), e.getId());
                 log.error("Monitor【{}】 执行报错，报错原因如下：", key, ex);
+                monitor.setStatus(MonitorStatusEnum.UNMONITOR.getStatus());
+                monitorService.updateById(monitor);
             } finally {
                 log.info("Monitor 【{}】 执行结束", key);
-                monitorMapper.unFrozenMonitor(e.getId());
-                unFairLock(key);
+                monitor.setStatus(MonitorStatusEnum.UNMONITOR.getStatus());
+                monitorService.updateById(monitor);
+                unLock(key);
             }
         });
     }
 
-    public Boolean tryFairLock(String lockKey) {
-        RLock lock = redissonClient.getFairLock(lockKey);
-        try {
-            return lock.tryLock(10, 60 * 60, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.error("尝试获取锁【{}】失败", lockKey);
-            e.printStackTrace();
+    public Boolean lock(String lockKey) {
+        String lockValue = stringRedisTemplate.opsForValue().get(lockKey);
+        if ("1".equals(lockValue)) {
+            log.info("Monitor【{}】 正在执行", lockKey);
+            return false;
         }
-        return Boolean.FALSE;
+        stringRedisTemplate.opsForValue().set(lockKey, "1");
+        return true;
     }
 
-    public boolean unFairLock(String lockKey) {
-        try {
-            RLock lock = redissonClient.getFairLock(lockKey);
-            if (null != lock && lock.isHeldByCurrentThread()) {
-                lock.unlock();
-                return true;
-            }
-        } catch (Exception e) {
-            log.error("解锁【{}】失败", lockKey);
-            e.printStackTrace();
-        }
-        return false;
+    public void unLock(String lockKey) {
+        stringRedisTemplate.opsForValue().set(lockKey, "0");
     }
 
 }

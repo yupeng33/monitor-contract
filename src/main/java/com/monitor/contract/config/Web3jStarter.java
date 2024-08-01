@@ -20,8 +20,6 @@ public class Web3jStarter implements InitializingBean {
             return;
         }
 
-        web3jConfig.chains.forEach((chain, url) -> {
-            Web3jUtil.addWeb3j(chain.toUpperCase(Locale.ROOT), url);
-        });
+        web3jConfig.chains.forEach(Web3jUtil::addWeb3j);
     }
 }
